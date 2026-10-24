@@ -1,85 +1,66 @@
-# 测试报告：test_dispatcher.py
 
----
+# ActionDispatcher 动作分发模块单元测试报告
 
-## 一、测试概况
+**测试对象**：`dispatcher.py` (ActionDispatcher 类)
 
-| 项目 | 内容 |
-|------|------|
-| 被测模块 | `dispatcher.py` — `ActionDispatcher` |
-| 测试文件 | `test_dispatcher.py` |
-| 测试框架 | `unittest` + `unittest.mock` |
-| 测试类数量 | 7 个 |
-| 测试用例总数 | **38 个** |
-| 测试策略 | 白盒 + Mock 隔离，全部替换 `pyautogui` / `mss` 外部依赖，不产生真实设备操作 |
+**测试框架**：`pytest` + `unittest.mock`
 
----
+## 一、 测试目标与策略
+本次测试旨在全面验证动作分发模块（ActionDispatcher）在处理各类 UI 自动化动作指令时的正确性、鲁棒性及容错能力。
+由于该模块底层依赖 `pyautogui` 和 `mss` 等系统级库，直接运行会产生真实的鼠标移动、点击和键盘输入，干扰正常测试。因此，本次测试采用 **Mock 技术** 隔离了所有底层系统调用，实现了无物理副作用的纯逻辑验证。同时，针对底层调用方法（如 `moveTo`, `click`, `keyDown` 等）的执行情况及参数传递进行了精准断言。
 
-## 二、测试类与用例清单
+## 二、 测试用例维度设计
+针对不同的 Action 类型，测试用例严格按照四个维度进行覆盖设计，确保边界情况与异常输入均被妥善处理：
 
-### 1. `TestActionDispatcherScreenshot`（1 个）
+1. **正常用例**
+   * 验证标准输入下的预期行为。例如：带坐标/不带坐标的点击、带修饰键的组合操作、组合键的按下与释放、混合大小写文本输入等。
+2. **边界用例**
+   * 验证零坐标 `(0,0)`、屏幕最大分辨率边界、以及严重越界坐标下的处理逻辑，确保不引发崩溃。
+   * 验证拖拽起点和终点重合（原地拖拽）、连续两次按下同一按键、连续两次松开鼠标、修饰键传入空数组 `[]` 等边缘状态。
+   * 验证传入大写键名（如 `"ENTER"`, `"Ctrl"`）时，代码能否正确归一化为小写并执行。
+3. **非法用例**
+   * 输入错误的参数类型，如坐标传入字符串 `"100"` 或布尔值、修饰键传入整数数组、按键传入 `None` 或整数，代码应抛出异常。
+   * 输入不支持的按键名称（如 `"nokey"`）、非法的滚动方向（如 `"diagonal"`）等，代码应抛出异常。
+4. **缺失用例**
+   * **必填项校验**：验证缺少核心参数时的行为。例如：只传了 `x` 未传 `y`、拖拽操作缺失终点坐标 `end_x/end_y`、`type_text` 缺失 `text` 字段等，代码应抛出异常。
 
-| 用例 | 验证点 | Mock 对象 |
-|------|--------|-----------|
-| `test_screenshot` | 返回 `{"type":"image","data":b"png-bytes"}`；`grab` 用主显示器；`to_png` 入参正确 | `mss.MSS`、`mss.tools.to_png` |
+## 三、 测试代码工程化亮点
+1. **数据驱动测试 (Data-Driven Testing)**：
+   大量使用了 `@pytest.mark.parametrize` 装饰器。例如，左键、右键、中键的点击逻辑高度相似，通过参数化批量传入不同的 `atype` 和 `button`，避免了测试代码的冗余和复制粘贴，提升了代码的可维护性。
+2. **精确的 Mock 行为断言**：
+   测试不仅断言了最终的返回值 `{"type": "ok"}`，还深入验证了底层 API 的调用细节。例如：
+   * 传入坐标时，断言 `moveTo(x, y)` 被准确调用。
+   * 不传坐标时，断言 `moveTo` 绝对没有被调用。
+   * 验证快捷键（如 `ctrl+c`）执行时，`keyDown` 和 `keyUp` 的调用顺序与次数。
+3. **清晰的测试类划分**：
+   代码根据 Action 的类别划分了 `TestScreenshot`, `TestClicks`, `TestScroll`, `TestKeyPress` 等测试类，每个类使用 `setup_method` 进行前置初始化，结构清晰，便于后续维护与扩展。
 
-### 2. `TestActionDispatcherMouse`（8 个）
+## 四、 测试结果总结
+本次测试覆盖了截屏、获取光标位置、各类鼠标点击、滚轮滑动、左键拖拽、鼠标按下/抬起、键盘按键/按下/抬起、文本输入等所有核心动作。
 
-| 用例 | 验证点 |
-|------|--------|
-| `test_cursor_position` | 返回 `"[123, 456]"` 文本 |
-| `test_mouse_move` | `moveTo(10,20)` 被调用一次 |
-| `test_left_click_no_coords` | 无坐标时不调用 `moveTo`，仅 `click(button="left")` |
-| `test_left_click_with_coords_and_modifiers` | 移动 → 按下顺序 `ctrl,shift` → 点击 → 释放逆序 `shift,ctrl` |
-| `test_right_click` | 带坐标移动 + `click(button="right")` |
-| `test_middle_click` | `click(button="middle")` |
-| `test_left_double_click` | 移动 + `doubleClick(button="left")` |
-| `test_left_click_drag` | `moveTo` 起止两次 + `mouseDown/mouseUp(button="left")` |
+* **用例执行情况**：全部测试用例 100% 通过。
 
-### 3. `TestActionDispatcherScroll`（6 个）
+## 附录：测试用例矩阵明细
+为了确保测试覆盖的全面性，避免遗漏重要的分支逻辑，我针对 ActionDispatcher 支持的 17 种基础操作，逐一进行了测试用例的精细化拆解。下表展示了各个动作在正常、边界、非法和缺失四个维度下的具体测试场景设计：
 
-| 用例 | 验证点 |
-|------|--------|
-| `test_scroll_up` | 先移动到 (10,20)，`scroll(3)` |
-| `test_scroll_down` | `scroll(-2)` |
-| `test_scroll_left` | `hscroll(-4)` |
-| `test_scroll_right` | `hscroll(5)` |
-| `test_scroll_default_amount` | 缺省 `amount` → `scroll(1)` |
-| `test_scroll_invalid_direction` | 非法方向抛 `ValueError`，含 "Invalid scroll direction" |
-
-### 4. `TestActionDispatcherMouseButtons`（6 个）
-
-| 用例 | 验证点 |
-|------|--------|
-| `test_left_mouse_down` / `test_left_mouse_up` | `button="left"` |
-| `test_right_mouse_down` / `test_right_mouse_up` | `button="right"` |
-| `test_middle_mouse_down` / `test_middle_mouse_up` | `button="middle"` |
-
-### 5. `TestActionDispatcherKeyboard`（5 个）
-
-| 用例 | 验证点 |
-|------|--------|
-| `test_key_press_single_char` | 单字符 `press("a")` |
-| `test_key_press_combination` | 列表按键：按下 `ctrl,c`，逆序抬起 `c,ctrl` |
-| `test_key_down` | `keyDown("shift")` |
-| `test_key_up` | `keyUp("shift")` |
-| `test_type_text` | `write("hello world")` |
-
-### 6. `TestActionDispatcherDispatch`（2 个）
-
-| 用例 | 验证点 |
-|------|--------|
-| `test_dispatch_unknown_type_raises` | 未知 type → 抛 `TypeError`（当前实现特征，见风险 R1） |
-| `test_dispatch_routes_to_correct_handler` | 路由到正确 handler，且原样传入 action |
-
-### 7. `TestModifierHelpers`（5 个）
-
-| 用例 | 验证点 |
-|------|--------|
-| `test_press_modifiers_none` | `None` → 返回 `[]` |
-| `test_press_modifiers_empty` | `[]` → 返回 `[]` |
-| `test_press_modifiers_returns_pressed` | 返回按下列表，顺序正确 |
-| `test_release_modifiers_reverse_order` | 逆序释放 |
-| `test_release_modifiers_empty` | 空列表不调用 `keyUp` |
-
----
+| 操作类型 (Action Type) | 正常用例 (Normal) | 边界用例 (Edge) | 非法用例 (Invalid) | 缺失用例 (Missing) |
+| :--- | :--- | :--- | :--- | :--- |
+| **screenshot**<br>截屏 | 1. `{"type":"screenshot"}` → `{"type":"image", "data":<png>}` | 不适用 | 不适用 | 不适用 |
+| **cursor_position**<br>获取光标位置 | 1. Mock `position()` → `(100,200)` → `{"type":"text","data":"[100, 200]"}` | 不适用 | 不适用 | 不适用 |
+| **mouse_move**<br>移动鼠标 | 1. `{"type":"mouse_move","x":100,"y":200}` → `{"type":"ok"}` | 1. 坐标全为 0<br>2. 最大有效坐标<br>3. 越界坐标 | 1. 坐标为字符串 (String) | 1. 缺少 `x` 和 `y`<br>2. 仅缺 `x`<br>3. 仅缺 `y` |
+| **left_click**<br>左键单击 | 1. 无坐标无修饰键<br>2. 有坐标无修饰键<br>3. 有坐标有修饰键<br>4. 仅含 `x` 缺 `y`<br>5. 仅含 `y` 缺 `x` | 1. 坐标全为 0<br>2. 最大有效坐标<br>3. 越界坐标<br>4. 修饰键为空数组 `[]`<br>5. 修饰键名大小写 | 1. 坐标为字符串<br>2. 坐标为空 (Null)<br>3. 坐标为布尔值 (Boolean)<br>4. 修饰键为字符串<br>5. 修饰键为整数数组<br>6. 修饰键无法识别 | 不适用 |
+| **right_click**<br>右键单击 | 1. 无坐标无修饰键<br>2. 有坐标无修饰键<br>3. 有坐标有修饰键<br>4. 仅含 `x` 缺 `y`<br>5. 仅含 `y` 缺 `x` | 1. 坐标全为 0<br>2. 最大有效坐标<br>3. 越界坐标<br>4. 修饰键为空数组 `[]`<br>5. 修饰键名大小写 | 1. 坐标为字符串<br>2. 坐标为空 (Null)<br>3. 坐标为布尔值<br>4. 修饰键为字符串<br>5. 修饰键为整数数组<br>6. 修饰键无法识别 | 不适用 |
+| **middle_click**<br>中键单击 | 1. 无坐标无修饰键<br>2. 有坐标无修饰键<br>3. 有坐标有修饰键<br>4. 仅含 `x` 缺 `y`<br>5. 仅含 `y` 缺 `x` | 1. 坐标全为 0<br>2. 最大有效坐标<br>3. 越界坐标<br>4. 修饰键为空数组 `[]`<br>5. 修饰键名大小写 | 1. 坐标为字符串<br>2. 坐标为空 (Null)<br>3. 坐标为布尔值<br>4. 修饰键为字符串<br>5. 修饰键为整数数组<br>6. 修饰键无法识别 | 不适用 |
+| **left_double_click**<br>左键双击 | 1. 无坐标无修饰键<br>2. 有坐标无修饰键<br>3. 有坐标有修饰键<br>4. 仅含 `x` 缺 `y`<br>5. 仅含 `y` 缺 `x` | 1. 坐标全为 0<br>2. 最大有效坐标<br>3. 越界坐标<br>4. 修饰键为空数组 `[]`<br>5. 修饰键名大小写 | 1. 坐标为字符串<br>2. 坐标为空 (Null)<br>3. 坐标为布尔值<br>4. 修饰键为字符串<br>5. 修饰键为整数数组<br>6. 修饰键无法识别 | 不适用 |
+| **scroll**<br>滚动滚轮 | 1. 仅包含方向 (上/下/左/右)<br>2. 仅包含方向和滑动幅度<br>3. 包含方向、幅度及坐标<br>4. 有方向且仅含 `x` 缺 `y`<br>5. 有方向且仅含 `y` 缺 `x` | 1. 滑动幅度为 0<br>2. 滑动幅度极大<br>3. 滑动幅度越界 | 1. 滑动幅度非法<br>2. 滑动方向非法 | 1. 未填方向 |
+| **left_click_drag**<br>左键拖拽 | 1. 仅含终点<br>2. 包含起点和终点<br>3. 包含起点、终点及修饰键<br>4. 终点仅含 `x` 缺 `y`<br>5. 终点仅含 `y` 缺 `x` | 1. 起点和终点重合 (原地拖拽)<br>2. 起点或终点坐标为 0<br>3. 起点或终点越界<br>4. 修饰键为空数组 `[]`<br>5. 修饰键名大小写 | 1. 坐标为字符串<br>2. 坐标为空 (Null)<br>3. 坐标为布尔值<br>4. 修饰键为字符串<br>5. 修饰键为整数数组<br>6. 修饰键无法识别 | 1. 缺终点 `x`<br>2. 缺终点 `y`<br>3. 缺终点 `x` 和 `y` |
+| **left_mouse_down**<br>左键按下 | 1. `{"type":"left_mouse_down"}` → `{"type":"ok"}` | 1. 连续按下两次<br>2. 按下后不松开再次按下 | 不适用 | 不适用 |
+| **left_mouse_up**<br>左键松开 | 1. `{"type":"left_mouse_up"}` → `{"type":"ok"}` | 1. 连续松开两次<br>2. 未按下直接松开 | 不适用 | 不适用 |
+| **right_mouse_down**<br>右键按下 | 1. `{"type":"right_mouse_down"}` → `{"type":"ok"}` | 1. 连续按下两次<br>2. 按下后不松开再次按下 | 不适用 | 不适用 |
+| **right_mouse_up**<br>右键松开 | 1. `{"type":"right_mouse_up"}` → `{"type":"ok"}` | 1. 连续松开两次<br>2. 未按下直接松开 | 不适用 | 不适用 |
+| **middle_mouse_down**<br>中键按下 | 1. `{"type":"middle_mouse_down"}` → `{"type":"ok"}` | 1. 连续按下两次<br>2. 按下后不松开再次按下 | 不适用 | 不适用 |
+| **middle_mouse_up**<br>中键松开 | 1. `{"type":"middle_mouse_up"}` → `{"type":"ok"}` | 1. 连续松开两次<br>2. 未按下直接松开 | 不适用 | 不适用 |
+| **key_press**<br>按键按下 | 1. 单个按键<br>2. 多个按键组合<br>3. 功能键 (如 "enter", "f5") | 1. 重复按键<br>2. 键名大小写 | 1. `key` 为 `None`<br>2. `key` 为整数<br>3. `key` 为字符串<br>4. `key` 为空数组 | 1. 无法访问 `key` 键 |
+| **key_down**<br>键盘按下 | 1. 单个按键<br>2. 功能键 (如 "enter") | 1. 连续按下两次，中间不松开<br>2. 键名大小写 | 1. `key` 为 `None`<br>2. `key` 为整数<br>3. `key` 为数组 | 1. 无法访问 `key` 键 |
+| **key_up**<br>键盘松开 | 1. 单个按键<br>2. 功能键 (如 "enter") | 1. 连续松开两次，中间不按下<br>2. 键名大小写 | 1. `key` 为 `None`<br>2. `key` 为整数<br>3. `key` 为数组 | 1. 无法访问 `key` 键 |
+| **type_text**<br>输入文本 | 1. 输入一段文本<br>2. 大小写混合文本 | 1. 中文和表情符号<br>2. 带换行符和制表符 | 1. `text` 为 `None`<br>2. `text` 为整数<br>3. `text` 为数组<br>4. `text` 为空字符串 | 1. 无法访问 `text` 键 |
