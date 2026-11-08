@@ -1,0 +1,69 @@
+(gui_agent) C:\Users\Greta\Desktop\gui-agent>python src/cli.py "open the web browser"
+================================================================================
+initialize gui agent with goal
+================================================================================
+Using CPU. Note: This module is much faster with a GPU.
+Agent created
+================================================================================
+start running agent
+================================================================================
+[step 0]
+thought=None
+action=None
+result=None
+finished=False
+--------------------------------------------------------------------------------
+Processing perception node
+--------------------------------------------------------------------------------
+Received screenshot data: 706005 bytes
+Generated annotated screenshot
+--------------------------------------------------------------------------------
+Processing planner node
+--------------------------------------------------------------------------------
+...reasoning start...
+...reasoning complete...
+[step 1]
+thought=The goal is to open the web browser. The Firefox icon is visible on the desktop, which is a common web browser.
+action={'type': <ActionType.DOUBLE_CLICK: 'double_click'>, 'x': 52, 'y': 408, 'modifiers': []}
+result=None
+finished=False
+--------------------------------------------------------------------------------
+Processing executor node
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+Processing perception node
+--------------------------------------------------------------------------------
+Received screenshot data: 174861 bytes
+Generated annotated screenshot
+--------------------------------------------------------------------------------
+Processing planner node
+--------------------------------------------------------------------------------
+...reasoning start...
+...reasoning complete...
+[step 2]
+thought=The goal is to open the web browser. The Firefox browser is already open, and the default browser setting prompt is displayed. The next step is to close this prompt to proceed with the task.
+action={'type': <ActionType.LEFT_CLICK: 'left_click'>, 'x': 1120, 'y': 304, 'modifiers': []}
+result={'type': 'ok'}
+finished=False
+--------------------------------------------------------------------------------
+Processing executor node
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+Processing perception node
+--------------------------------------------------------------------------------
+Received screenshot data: 182611 bytes
+Generated annotated screenshot
+--------------------------------------------------------------------------------
+Processing planner node
+--------------------------------------------------------------------------------
+...reasoning start...
+...reasoning complete...
+[step 3]
+thought=The goal is to open the web browser. The current screen shows the Firefox browser is open and ready for use.
+action={'type': <ActionType.FINISH: 'finish'>}
+result={'type': 'ok'}
+finished=True
+
+================================================================================
+Agent 运行结束，窗口已恢复。
+================================================================================

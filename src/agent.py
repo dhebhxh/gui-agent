@@ -1,32 +1,57 @@
 import uuid
+from typing import Generator
+
 from config import AgentConfig
 from graph import build_graph
 
-class GUIAgent:
-    def __init__(self, cfg: AgentConfig = None):
-        self.cfg = cfg or AgentConfig()
-        self.app = build_graph(self.cfg)
 
-    def run(self, goal: str, thread_id: str = None) -> dict:
+class GUIAgent:
+    def __init__(self, agent_config: AgentConfig = None):
+        self.agent_cfg = agent_config or AgentConfig()
+        self.agent = build_graph(self.agent_cfg)
+        print(f"Agent created")
+
+    def run_stream(
+        self,
+        goal: str,
+        thread_id: str = None,
+        stream_mode: str = "values",
+    ) -> Generator[dict, None, None]:
         init_state = {
             "goal": goal,
-            "messages": [],
-            "step": 0,
-            "screenshot": None,
+            "raw_screenshot": None,
+            "annotated_screenshot": None,
             "elements": [],
-            "vis_image": None,
+            "messages": [],
+            "history": [],
             "last_action": None,
             "last_result": None,
-            "history": [],
+            "step": 0,
             "finished": False,
-            "error": None,
         }
-        config = {"configurable": {"thread_id": thread_id or str(uuid.uuid4())},
-                  "recursion_limit": self.cfg.max_steps * 6}
-        final = self.app.invoke(init_state, config=config)
-        return {
-            "finished": final["finished"],
-            "steps": final["step"],
-            "history": final["history"],
-            "error": final["error"],
+
+        run_config = {
+            "configurable": {"thread_id": thread_id or str(uuid.uuid4())},
+            "recursion_limit": self.agent_cfg.max_steps * 6 + 20,
         }
+
+        last_printed_step = None
+        
+        for event in self.agent.stream(
+            init_state, config=run_config, stream_mode=stream_mode
+        ):
+
+            state = event
+            step = state.get("step", 0)
+
+            if step != last_printed_step:
+                last_printed_step = step
+                print(
+                    f"[step {step}]\n"
+                    f"thought={state.get('messages')[-1].content if state.get('messages') else None}\n"
+                    f"action={state.get('last_action')}\n"
+                    f"result={state.get('last_result')}\n"
+                    f"finished={state.get('finished')}"
+                )
+
+            yield state

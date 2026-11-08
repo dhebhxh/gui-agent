@@ -1,0 +1,105 @@
+(gui_agent) C:\Users\Greta\Desktop\gui-agent>python src/cli.py "search for 'LangGraph tutorial' in the browser"
+================================================================================
+initialize gui agent with goal
+================================================================================
+Using CPU. Note: This module is much faster with a GPU.
+Agent created
+================================================================================
+start running agent
+================================================================================
+[step 0]
+thought=None
+action=None
+result=None
+finished=False
+--------------------------------------------------------------------------------
+Processing perception node
+--------------------------------------------------------------------------------
+Received screenshot data: 199302 bytes
+Generated annotated screenshot
+--------------------------------------------------------------------------------
+Processing planner node
+--------------------------------------------------------------------------------
+...reasoning start...
+...reasoning complete...
+[step 1]
+thought=The goal is to search for 'LangGraph tutorial' in the browser. The search bar is visible and ready for input.
+action={'type': <ActionType.LEFT_CLICK: 'left_click'>, 'x': 600, 'y': 565, 'modifiers': []}
+result=None
+finished=False
+--------------------------------------------------------------------------------
+Processing executor node
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+Processing perception node
+--------------------------------------------------------------------------------
+Received screenshot data: 201914 bytes
+Generated annotated screenshot
+--------------------------------------------------------------------------------
+Processing planner node
+--------------------------------------------------------------------------------
+...reasoning start...
+...reasoning complete...
+[step 2]
+thought=The goal is to search for 'LangGraph tutorial' in the browser. The search bar is visible and ready for input.
+action={'type': <ActionType.LEFT_CLICK: 'left_click'>, 'x': 600, 'y': 565, 'modifiers': []}
+result={'type': 'ok'}
+finished=False
+--------------------------------------------------------------------------------
+Processing executor node
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+Processing perception node
+--------------------------------------------------------------------------------
+Received screenshot data: 203642 bytes
+Generated annotated screenshot
+--------------------------------------------------------------------------------
+Processing planner node
+--------------------------------------------------------------------------------
+...reasoning start...
+...reasoning complete...
+[step 3]
+thought=The goal is to search for 'LangGraph tutorial' in the browser. The search bar is visible and ready for input.
+action={'type': <ActionType.LEFT_CLICK: 'left_click'>, 'x': 600, 'y': 565, 'modifiers': []}
+result={'type': 'ok'}
+finished=False
+--------------------------------------------------------------------------------
+Processing executor node
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+Processing perception node
+--------------------------------------------------------------------------------
+Received screenshot data: 211580 bytes
+Generated annotated screenshot
+--------------------------------------------------------------------------------
+Processing planner node
+--------------------------------------------------------------------------------
+...reasoning start...
+...reasoning complete...
+[step 4]
+thought=The goal is to search for 'LangGraph tutorial' in the browser. The search bar is visible and ready for input.
+action={'type': <ActionType.TYPE_TEXT: 'type_text'>, 'text': 'LangGraph tutorial'}
+result={'type': 'ok'}
+finished=False
+--------------------------------------------------------------------------------
+Processing executor node
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+Processing perception node
+--------------------------------------------------------------------------------
+Received screenshot data: 217434 bytes
+Generated annotated screenshot
+--------------------------------------------------------------------------------
+Processing planner node
+--------------------------------------------------------------------------------
+...reasoning start...
+...reasoning complete...
+[step 5]
+thought=The search query 'LangGraph tutorial' has been entered into the search bar, and the search results are displayed. The goal of searching for this query has been achieved.
+action={'type': <ActionType.FINISH: 'finish'>}
+result={'type': 'ok'}
+finished=True
+
+================================================================================
+Agent 运行结束，窗口已恢复。
+================================================================================

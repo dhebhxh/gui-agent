@@ -1,38 +1,53 @@
+import time
 from dispatcher import ActionDispatcher
 from state import AgentState
-from config import AgentConfig
 
-def build_executor_node(cfg: AgentConfig):
-    dispatcher = ActionDispatcher()
-
-    def _resolve_coords(action: dict, elements: list) -> dict:
-        """若给 element_id 而没给 x/y，从 elements 取 center 补上"""
-        if action.get("element_id") and action.get("x") is None:
-            for e in elements:
-                if e["element_id"] == action["element_id"]:
-                    action["x"], action["y"] = e["center"]
-                    break
-        return action
+def build_executor_node():
+    d = ActionDispatcher()
 
     def executor_node(state: AgentState) -> dict:
-        action = dict(state["last_action"])
 
-        if action["type"] == "finish":
-            return {"finished": True, "last_result": {"type": "ok", "data": "finished"}}
+        print("-" * 80)
+        print(f"Processing executor node")
+        print("-" * 80)
+        
+        action = dict(state.get("last_action"))
 
-        action = {k: v for k, v in action.items() if v is not None and k != "reasoning"}
-        action = _resolve_coords(action, state["elements"])
+        action_type = action["type"]
 
+        # task finish
+        if action_type == "finish":
+            return {
+                "finished": True,
+                "last_result": {"type": "ok", "data": "finished"}
+            }
+
+        # other action
         try:
-            result = dispatcher.dispatch(action)
-            error = None
+            result = d.dispatch(action)
         except Exception as e:
-            result = {"type": "error", "error": str(e)}
-            error = str(e)
+            err_msg = f"type(d).__name__: {e}"
+            return {
+                "last_result": {"type": "error", "data": err_msg},
+            }
 
-        record = {"step": state["step"], "action": action, "result": result, "error": error}
-        history = state.get("history", []) + [record]
+        time.sleep(2) # wait for the screen to update after the action is performed
+        # if screenshot
+        if action_type == "screenshot":
+            safe_result = {"type": "image", "data": "<image>"}
+        else:
+            safe_result = result
 
-        return {"last_result": result, "history": history, "error": error}
+        history_entry = {
+            "step": state.get("step", 0),
+            "action": {k: v for k, v in action.items()},
+            "result": safe_result
+        }
+
+        return {
+            "last_result": safe_result,
+            "history": list(state.get("history") or []) + [history_entry]
+        }
 
     return executor_node
+        

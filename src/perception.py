@@ -1,37 +1,40 @@
-from typing import Callable
+import time, os
 from screen_element_extractor import ScreenElementExtractor   # 你已有的
-from dispatcher import ActionDispatcher                        # 你已有的
+from dispatcher import ActionDispatcher   
 from state import AgentState
-from config import AgentConfig
 import cv2, numpy as np
 
-def build_perception_node(cfg: AgentConfig):
-    extractor = ScreenElementExtractor(
-        ocr_langs=cfg.ocr_langs,
-        iou_threshold=cfg.iou_threshold,
-        use_gpu=cfg.use_gpu,
-    )
+def build_perception_node():
+    extractor = ScreenElementExtractor()
     dispatcher = ActionDispatcher()
 
     def perception_node(state: AgentState) -> dict:
-        # 1) 截图（复用 dispatcher 的 screenshot action，保证与执行层一致）
+        print("-" * 80)
+        print(f"Processing perception node")
+        print("-" * 80)
         shot = dispatcher.dispatch({"type": "screenshot"})   # {"type":"image","data":png}
         png = shot["data"]
 
-        # 2) bytes -> cv2 image
+        print(f"Received screenshot data: {len(png)} bytes")
+
+        ts = time.strftime("%Y%m%d_%H%M%S")
+        ms = int(time.time() * 1000) % 1000
+        raw_path = os.path.join("screenshot", f"raw_{ts}_{ms:03d}.png")
+        with open(raw_path, "wb") as f:
+            f.write(png)
+
         arr = np.frombuffer(png, dtype=np.uint8)
         img = cv2.imdecode(arr, cv2.IMREAD_COLOR)
 
-        # 3) 元素提取
-        output, vis = extractor.process_cv_image(img)
+        output, annotated_img = extractor.process_cv_image(img)
+        _, annotated_buf = cv2.imencode(".png", annotated_img)
 
-        # 4) 可视化图也编码成 png 存进 state（方便 debug / 给 LLM 看标注图）
-        _, vis_buf = cv2.imencode(".png", vis)
+        print(f"Generated annotated screenshot")
 
         return {
-            "screenshot": png,
+            "raw_screenshot": png,
+            "annotated_screenshot": annotated_buf.tobytes(),
             "elements": output["elements"],
-            "vis_image": vis_buf.tobytes(),
         }
 
     return perception_node

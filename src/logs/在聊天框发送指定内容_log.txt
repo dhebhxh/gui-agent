@@ -1,0 +1,135 @@
+(gui_agent) C:\Users\Greta\Desktop\gui-agent>python src/cli.py "type 'hello' into the chat box and click 发送"
+================================================================================
+initialize gui agent with goal
+================================================================================
+Using CPU. Note: This module is much faster with a GPU.
+Agent created
+================================================================================
+start running agent
+================================================================================
+[step 0]
+thought=None
+action=None
+result=None
+finished=False
+--------------------------------------------------------------------------------
+Processing perception node
+--------------------------------------------------------------------------------
+Received screenshot data: 315160 bytes
+Generated annotated screenshot
+--------------------------------------------------------------------------------
+Processing planner node
+--------------------------------------------------------------------------------
+...reasoning start...
+...reasoning complete...
+[step 1]
+thought=The goal is to type 'hello' into the chat box and click 发送. The chat box is visible, and the input field is ready for text entry.
+action={'type': <ActionType.TYPE_TEXT: 'type_text'>, 'text': 'hello'}
+result=None
+finished=False
+--------------------------------------------------------------------------------
+Processing executor node
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+Processing perception node
+--------------------------------------------------------------------------------
+Received screenshot data: 315549 bytes
+Generated annotated screenshot
+--------------------------------------------------------------------------------
+Processing planner node
+--------------------------------------------------------------------------------
+...reasoning start...
+...reasoning complete...
+[step 2]
+thought=The text 'hello' has already been typed into the chat box. The next step is to click the 发送 button to send the message.
+action={'type': <ActionType.LEFT_CLICK: 'left_click'>, 'x': 1872, 'y': 988, 'modifiers': []}
+result={'type': 'ok'}
+finished=False
+--------------------------------------------------------------------------------
+Processing executor node
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+Processing perception node
+--------------------------------------------------------------------------------
+Received screenshot data: 316224 bytes
+Generated annotated screenshot
+--------------------------------------------------------------------------------
+Processing planner node
+--------------------------------------------------------------------------------
+...reasoning start...
+...reasoning complete...
+[step 3]
+thought=The goal is to type 'hello' into the chat box and click 发送. The chat box is already filled with 'hello', and the 发送 button is visible and ready to be clicked.
+action={'type': <ActionType.LEFT_CLICK: 'left_click'>, 'x': 1872, 'y': 988, 'modifiers': []}
+result={'type': 'ok'}
+finished=False
+--------------------------------------------------------------------------------
+Processing executor node
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+Processing perception node
+--------------------------------------------------------------------------------
+Received screenshot data: 316177 bytes
+Generated annotated screenshot
+--------------------------------------------------------------------------------
+Processing planner node
+--------------------------------------------------------------------------------
+...reasoning start...
+...reasoning complete...
+[step 4]
+thought=The goal is to type 'hello' into the chat box and click 发送. The chat box is already filled with 'hello', and the 发送 button is visible. Therefore, the next step is to click the 发送 button to complete the task.
+action={'type': <ActionType.LEFT_CLICK: 'left_click'>, 'x': 1872, 'y': 988, 'modifiers': []}
+result={'type': 'ok'}
+finished=False
+--------------------------------------------------------------------------------
+Processing executor node
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+Processing perception node
+--------------------------------------------------------------------------------
+Received screenshot data: 316209 bytes
+Generated annotated screenshot
+--------------------------------------------------------------------------------
+Processing planner node
+--------------------------------------------------------------------------------
+...reasoning start...
+...reasoning complete...
+[step 5]
+thought=The goal was to type 'hello' into the chat box and click 发送. The chat box already contains 'hello' and the 发送 button is visible and ready to be clicked.
+action={'type': <ActionType.LEFT_CLICK: 'left_click'>, 'x': 1872, 'y': 988, 'modifiers': []}
+result={'type': 'ok'}
+finished=False
+--------------------------------------------------------------------------------
+Processing executor node
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+Processing perception node
+--------------------------------------------------------------------------------
+Received screenshot data: 316126 bytes
+Generated annotated screenshot
+--------------------------------------------------------------------------------
+Processing planner node
+--------------------------------------------------------------------------------
+...reasoning start...
+...reasoning complete...
+[step 6]
+thought=The goal was to type 'hello' into the chat box and click 发送. The chat box already contains 'hello', and the 发送 button is visible and ready to be clicked.
+action={'type': <ActionType.LEFT_CLICK: 'left_click'>, 'x': 1872, 'y': 988, 'modifiers': []}
+result={'type': 'ok'}
+finished=False
+--------------------------------------------------------------------------------
+Processing executor node
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+Processing perception node
+--------------------------------------------------------------------------------
+Received screenshot data: 316212 bytes
+Generated annotated screenshot
+--------------------------------------------------------------------------------
+Processing planner node
+--------------------------------------------------------------------------------
+...reasoning start...
+
+================================================================================
+Agent 运行结束，窗口已恢复。
+================================================================================

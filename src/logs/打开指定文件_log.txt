@@ -1,0 +1,58 @@
+(gui_agent) C:\Users\Greta\Desktop\gui-agent>python src/cli.py "open the file named test_function in the file explorer"
+================================================================================
+initialize gui agent with goal
+================================================================================
+Using CPU. Note: This module is much faster with a GPU.
+Agent created
+================================================================================
+start running agent
+================================================================================
+[step 0]
+thought=None
+action=None
+result=None
+finished=False
+--------------------------------------------------------------------------------
+Processing perception node
+--------------------------------------------------------------------------------
+Received screenshot data: 187107 bytes
+Generated annotated screenshot
+--------------------------------------------------------------------------------
+Processing planner node
+--------------------------------------------------------------------------------
+...reasoning start...
+...reasoning complete...
+[step 1]
+thought=The file named 'test_functions.py' is visible in the file explorer. The goal is to open this file. Since the file is already selected, the next step is to double-click it to open it.
+action={'type': <ActionType.DOUBLE_CLICK: 'double_click'>, 'x': 405, 'y': 591, 'modifiers': []}
+result=None
+finished=False
+--------------------------------------------------------------------------------
+Processing executor node
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+Processing perception node
+--------------------------------------------------------------------------------
+Received screenshot data: 124931 bytes
+Generated annotated screenshot
+--------------------------------------------------------------------------------
+Processing planner node
+--------------------------------------------------------------------------------
+...reasoning start...
+...reasoning complete...
+[step 2]
+thought=The goal is to open the file named 'test_function' in the file explorer. The current screen shows a code editor, not the file explorer. I need to navigate to the file explorer to find and open the file.
+action={'type': <ActionType.LEFT_CLICK: 'left_click'>, 'x': 1092, 'y': 1062, 'modifiers': []}
+result={'type': 'ok'}
+finished=False
+--------------------------------------------------------------------------------
+Processing executor node
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+Processing perception node
+--------------------------------------------------------------------------------
+Received screenshot data: 258785 bytes
+
+================================================================================
+Agent 运行结束，窗口已恢复。
+================================================================================

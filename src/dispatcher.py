@@ -152,7 +152,7 @@ class ActionDispatcher:
     def _do_middle_click(self, action):
         return self._do_click(action, "middle")
 
-    def _do_left_double_click(self, action):
+    def _do_double_click(self, action):
         return self._do_click(action, "left", double=True)
 
     # ---------------------------------------------------------
