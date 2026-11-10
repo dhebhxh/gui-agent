@@ -19,16 +19,15 @@ def build_executor_node():
         if action_type == "finish":
             return {
                 "finished": True,
-                "last_result": {"type": "ok", "data": "finished"}
+                "last_result": {"type": "finished"}
             }
 
         # other action
         try:
             result = d.dispatch(action)
         except Exception as e:
-            err_msg = f"type(d).__name__: {e}"
             return {
-                "last_result": {"type": "error", "data": err_msg},
+                "last_result": {"type": "error", "data": str(e)},
             }
 
         time.sleep(2) # wait for the screen to update after the action is performed

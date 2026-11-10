@@ -1,12 +1,24 @@
-from typing import TypedDict, Optional, Any
+from typing import TypedDict, Literal
+from PIL import Image
 
+class TextBlock(TypedDict):
+    type: Literal["text"]
+    text: str
 
-class UnifiedSample(TypedDict):
-    """Unified sample format shared by all dataset adapters."""
-    goal_id: str
-    goal_desc: str
-    image_bytes: Optional[bytes]
-    step: int
-    action: dict
-    source: str
-    metadata: Optional[dict]
+class ImageBlock(TypedDict):
+    type: Literal["image"]
+
+ContentBlock = TextBlock | ImageBlock
+
+class Message(TypedDict):
+    role: str
+    content: list[ContentBlock]
+
+class VisionDataset(TypedDict):
+    # format: conversional
+    # type: prompt-completion
+    prompt: list[Message]
+    completion: list[Message]
+    images: list[Image.Image]
+
+    

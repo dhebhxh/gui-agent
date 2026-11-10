@@ -1,6 +1,9 @@
 # dispatcher.py
 import pyautogui
 import mss
+import pyperclip
+import sys
+import time
 
 # 允许的修饰键（归一化后）
 _VALID_MODIFIERS = {"ctrl", "alt", "shift", "win", "cmd", "command", "option"}
@@ -290,13 +293,24 @@ class ActionDispatcher:
     # type text
     # ---------------------------------------------------------
     def _do_type_text(self, action):
+        x, y = self._validate_xy(action)
         self._require(action, "text")
         text = action["text"]
         if not isinstance(text, str):
             raise TypeError(f"text must be str, got {type(text).__name__}: {text!r}")
         if text == "":
             raise ValueError("text must not be empty")
-        pyautogui.write(text)
+        
+        pyautogui.moveTo(x, y)
+        pyautogui.click()
+
+        old_clipboard = pyperclip.paste()
+        pyperclip.copy(text)
+        paste_mod = "cmd" if sys.platform == "darwin" else "ctrl"
+        pyautogui.hotkey(paste_mod, "v")
+        time.sleep(0.3)
+        pyperclip.copy(old_clipboard)
+
         return {"type": "ok"}
 
     # ---------------------------------------------------------

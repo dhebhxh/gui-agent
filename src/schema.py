@@ -40,12 +40,6 @@ class ActionType(str, Enum):
 class BaseAction(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    thought: str = Field(
-        "1) What screen this is.\n"
-        "2) What the current goal is.\n"
-        "3) The exact action you are taking, naming the action type.\n"
-    )
-
     @field_validator("x", "y", "start_x", "start_y", "end_x", "end_y", check_fields=False)
     @classmethod
     def coords_must_not_be_bool(cls, v):
@@ -57,14 +51,15 @@ class BaseAction(BaseModel):
 # ---------------------------------------------------------
 # 3. Action models
 # ---------------------------------------------------------
+# 未加入最终可选择动作列表
 class ScreenshotAction(BaseAction):
     type: Literal[ActionType.SCREENSHOT] = ActionType.SCREENSHOT
 
-
+# 未加入最终可选择动作列表
 class CursorPositionAction(BaseAction):
     type: Literal[ActionType.CURSOR_POSITION] = ActionType.CURSOR_POSITION
 
-
+# 未加入最终可选择动作列表
 class MouseMoveAction(BaseAction):
     type: Literal[ActionType.MOUSE_MOVE] = ActionType.MOUSE_MOVE
     x: int = Field(description="Target X coordinate of the cursor.")
@@ -109,6 +104,7 @@ class DoubleClickAction(BaseAction):
             raise ValueError(f"{self.type.value}: x and y must be provided together or omitted together.")
         return self
 
+# 未加入最终可选择动作列表
 class MouseButtonAction(BaseAction):
     type: Literal[
         ActionType.LEFT_MOUSE_DOWN, ActionType.LEFT_MOUSE_UP,
@@ -136,6 +132,8 @@ class DragAction(BaseAction):
 
 class TypeTextAction(BaseAction):
     type: Literal[ActionType.TYPE_TEXT] = ActionType.TYPE_TEXT
+    x: int = Field(description="X coordinate of the input field to focus before typing.")
+    y: int = Field(description="Y coordinate of the input field to focus before typing.")
     text: str = Field(description="Text to type. Supports unicode and newlines. Must not be empty.")
 
     @field_validator("text")
@@ -145,7 +143,7 @@ class TypeTextAction(BaseAction):
             raise ValueError("text must not be empty.")
         return v
 
-
+# 未加入最终可选择动作列表
 class KeyAction(BaseAction):
     type: Literal[
         ActionType.KEY_PRESS,
@@ -197,6 +195,17 @@ Action = Annotated[
 
 
 class AgentOutputSchema(BaseModel):
+    thought: str = Field(
+        description=(
+            "Your thought should cover these points:\n"
+            "1. What the previous step tried to do.\n"
+            "2. What the current screen shows now.\n"
+            "3. Did the previous step achieve its expected result?\n"
+            "4. Is the final goal already achieved on the current screen?\n"
+            "5. Otherwise, what single action will you take next, and what result do you expect from it?\n"
+        ),
+    )
+
     action: Action = Field(
         description="The single action the agent decides to perform next."
     )
