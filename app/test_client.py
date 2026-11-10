@@ -36,8 +36,9 @@ def test_screenshot():
 
 
 def test_execute():
-    """测试动作执行接口，发一个简单的 click 动作示例"""
-    payload = {"action": {"type": "click", "x": 100, "y": 100}}
+    """测试动作执行接口，发一个简单的 move 动作示例"""
+    # 将 type 改为 move，只需要 x 和 y 坐标
+    payload = {"action": {"type": "mouse_move", "x": 100, "y": 100}}
     try:
         resp = requests.post(f"{BASE_URL}/execute", json=payload, timeout=10)
         print(f"[执行] 状态码: {resp.status_code}, 响应: {resp.text}")
@@ -45,7 +46,6 @@ def test_execute():
     except requests.exceptions.RequestException as e:
         print(f"[执行] 请求失败: {e}")
         return False
-
 
 if __name__ == "__main__":
     print("=== 测试连接 ===")
