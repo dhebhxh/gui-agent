@@ -47,6 +47,5 @@ models/
 Thumbs.db
 
 # ---- Data and outputs ----
-data/
 outputs/
 runs/
