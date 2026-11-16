@@ -4,39 +4,23 @@ from config import AgentConfig
 from schema import AgentOutputSchema, ActionType
 from prompts import SYSTEM_PROMPT, PLANNER_USER_TEMPLATE
 import base64
-from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
-
-def _build_multimodal_message(text: str, image_data) -> HumanMessage:
-
-    if isinstance(image_data, bytes):
-        b64_str = base64.b64encode(image_data).decode("utf-8")
-    else:
-        b64_str = image_data
-
-    content = [
-        {
-            "type": "text",
-            "text": text
-        },
-        {
-            "type": "image_url",
-            "image_url": {"url": f"data:image/png;base64,{b64_str}"}
-        }
-    ]
-
-    return HumanMessage(content = content)
     
-def _format_history(history:list, max_n=10):
-    formatted_history = []
-    for entry in history[:max_n]:
-        step = entry.get("step")
-        action = entry.get("action")
-        result = entry.get("result")
+def _format_ai_messages(messages, max_n=5) -> str:
+    ai_messages = []
+    for msg in (messages or []):
+        if msg.get("role") != "assistant":
+            continue
 
-        formatted_entry = f"Step {step}:\nAction: {action}\nResult: {result}\n"
-        formatted_history.append(formatted_entry)
+        content = msg.get("content")
+        if content and isinstance(content, str) and content.strip():
+            ai_messages.append(content)
 
-    return "\n".join(formatted_history)
+    if not ai_messages:
+        return "This is the first step. Start by examining the current screen."
+
+    recent = list(reversed(ai_messages[-max_n:]))
+    lines = [f"{i}. {text}" for i, text in enumerate(recent, start=1)]
+    return "\n".join(lines)
 
 def build_planner_node(cfg: AgentConfig):
     # initialize chat model
@@ -58,37 +42,43 @@ def build_planner_node(cfg: AgentConfig):
 
         user_text = PLANNER_USER_TEMPLATE.format(
             goal=state["goal"],
-            history=_format_history(state.get("history", [])),
-            last_action=state.get("last_action", "None"),
-            last_result=state.get("last_result", "None"),
+            thought_history=_format_ai_messages(state.get("messages") or [])
         )
 
-        user_image = state.get("raw_screenshot") or state.get("raw_screenshot")
-
-        user_msg = _build_multimodal_message(user_text, user_image)
-
-        sys_msg = SystemMessage(content=SYSTEM_PROMPT)
-
-        llm_input = [sys_msg, user_msg]
+        user_image = state.get("raw_screenshot")
+        if isinstance(user_image, bytes):
+            b64_str = base64.b64encode(user_image).decode("utf-8")
+        else:
+            b64_str = user_image
+        
+        llm_input = [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": [
+                {"type": "text", "text": user_text},
+                {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64_str}"}},
+            ]},
+        ]
 
         print(f"...reasoning start...")
         llm_output: AgentOutputSchema = llm_with_structure.invoke(llm_input)
         print(f"...reasoning complete...")
 
-        action = llm_output.action
-        action_dict = action.model_dump()
+        thought = llm_output.thought
+        action = llm_output.action.model_dump(exclude_none=True)
 
-        thought = action_dict.pop("thought", None)
-        
-        clear_action = action_dict
-
-        ai_msg = AIMessage(content=thought or "")
+        ai_msg = {
+            "role": "assistant",
+            "content": thought or ""
+        }
 
         return {
             "step": state.get("step") + 1,
             "finished": (llm_output.action.type == ActionType.FINISH),
-            "last_action": clear_action,
-            "messages": [user_msg, ai_msg]
+            "last_action": action,
+            "messages": [
+                {"role": "user", "content": user_text},
+                ai_msg
+            ]
         }
     
     return planner_node
