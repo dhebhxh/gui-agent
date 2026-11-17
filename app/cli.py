@@ -1,33 +1,28 @@
 # cli.py
-
+import logging
 import typer
 from agent import GUIAgent
+from logging_config import setup_logging
 
 app = typer.Typer()
 
+logger = logging.getLogger(__name__)
+
 @app.command()
 def run(goal: str):
-    print("=" * 80)
-    print(f"Initialize GUI Agent with goal: {goal}")
-    print("=" * 80)
+    setup_logging(logger.INFO)
     
     # 初始化 Agent
     agent = GUIAgent()
-
-    print("=" * 80)
-    print(f"Start running agent")
-    print("=" * 80)
 
     try:
         # 跑 Agent 的流式输出
         for _ in agent.run_stream(goal):
             pass
     except Exception as e:
-        print(f"\n[Error] Agent 运行崩溃: {e}")
+        logger.exception("Agent 运行崩溃")
     finally:
-        print("\n" + "=" * 80)
-        print("Agent 运行结束。")
-        print("=" * 80)
+        logger.info("Agent 运行结束")
 
 if __name__ == "__main__":
     app()

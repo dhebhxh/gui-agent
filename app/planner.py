@@ -4,7 +4,42 @@ from config import AgentConfig
 from schema import AgentOutputSchema, ActionType
 from prompts import SYSTEM_PROMPT, PLANNER_USER_TEMPLATE
 import base64
-    
+import logging
+import time
+
+logger = logging.getLogger(__name__)
+
+def _dump_llm_input(llm_input) -> str:
+    lines = []
+    for message in llm_input:
+        role = message.get("role")
+        content = message.get("content")
+
+        if isinstance(content, str):
+            lines.append("[role] " + str(role))
+            lines.append("[content] " + content)
+            lines.append("")
+            continue
+
+        if isinstance(content, list):
+            lines.append("[role] " + str(role))
+            for block in content:
+                block_type = block.get("type")
+                if block_type == "text":
+                    text = block.get("text")
+                    lines.append("[text] " + str(text))
+                elif block_type == "image_url":
+                    image_url = block.get("image_url")
+                    url = image_url.get("url")
+                    lines.append("[image] <" + str(len(url)) + " chars>")
+                else:
+                    lines.append("[block] type=" + str(block_type))
+            lines.append("")
+            continue
+
+        return "\n".join(lines)
+
+
 def _format_ai_messages(messages, max_n=5) -> str:
     ai_messages = []
     for msg in (messages or []):
@@ -36,9 +71,11 @@ def build_planner_node(cfg: AgentConfig):
     llm_with_structure = llm.with_structured_output(AgentOutputSchema)
     
     def planner_node(state: AgentState) -> dict:
-        print("-" * 80)
-        print(f"Processing planner node")
-        print("-" * 80)
+        logger.info(
+            "node=planner step=%d",
+            state.get("step")
+        )
+        start = time.time()
 
         user_text = PLANNER_USER_TEMPLATE.format(
             goal=state["goal"],
@@ -59,25 +96,45 @@ def build_planner_node(cfg: AgentConfig):
             ]},
         ]
 
-        print(f"...reasoning start...")
+        # full llm input
+        logger.debug(
+            "llm input | step=%d\n%s",
+            state.get("step"),
+            _dump_llm_input(llm_input)
+        )
+
+        # call inference
+        logger.info("llm call start")
+        llm_start = time.time()
         llm_output: AgentOutputSchema = llm_with_structure.invoke(llm_input)
-        print(f"...reasoning complete...")
+        logger.info("llm call end | latency=%.2fs", time.time() - llm_start)
+
+        logger.info(
+            "llm output | step=%d\n%s",
+            state.get("step"),
+            llm_output.model_dump_json(indent=2)
+        )
 
         thought = llm_output.thought
         action = llm_output.action.model_dump(exclude_none=True)
 
-        ai_msg = {
-            "role": "assistant",
-            "content": thought or ""
-        }
+        logger.info("STEP %d DECISION", state.get("step"))
+        logger.info("thought: %s", thought)
+        logger.info("action: %s", action)
+
+        logger.info(
+            "planner done | step=%d action=%s total_time=%.2fs",
+            state.get("step"),
+            action.get("type"),
+            time.time() - start
+        )
 
         return {
-            "step": state.get("step") + 1,
             "finished": (llm_output.action.type == ActionType.FINISH),
             "last_action": action,
             "messages": [
                 {"role": "user", "content": user_text},
-                ai_msg
+                {"role": "assistant", "content": thought or ""}
             ]
         }
     

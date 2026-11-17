@@ -1,5 +1,4 @@
-from agent import GUIAgent   # replace with your actual module name
-
+from agent import GUIAgent 
 
 def main():
     agent = GUIAgent()

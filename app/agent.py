@@ -1,15 +1,22 @@
 import uuid
 from typing import Generator
-
+import logging
+import time
 from config import AgentConfig
 from graph import build_graph
 
+logger = logging.getLogger(__name__)
 
 class GUIAgent:
     def __init__(self, agent_config: AgentConfig = None):
         self.agent_cfg = agent_config or AgentConfig()
         self.agent = build_graph(self.agent_cfg)
-        print(f"Agent created")
+        logger.info(
+            "Agent created | model=%s base_url=%s max_steps=%d",
+            self.agent_cfg.model_name,
+            self.agent_cfg.base_url,
+            self.agent_cfg.max_steps,
+        )
 
     def run_stream(
         self,
@@ -35,23 +42,31 @@ class GUIAgent:
             "recursion_limit": self.agent_cfg.max_steps * 6 + 20,
         }
 
-        last_printed_step = None
-        
+        logger.info(
+            "run start | thread_id=%s goal=%r",
+            thread_id,
+            goal,
+        )
+
+        last_printed_step = 0
+        loop_start = time.time()
+
         for event in self.agent.stream(
             init_state, config=run_config, stream_mode=stream_mode
         ):
 
             state = event
-            step = state.get("step", 0)
+            step = state.get("step")
 
             if step != last_printed_step:
-                last_printed_step = step
-                print(
-                    f"[step {step}]\n"
-                    f"thought={state.get('messages')[-1].content if state.get('messages') else None}\n"
-                    f"action={state.get('last_action')}\n"
-                    f"result={state.get('last_result')}\n"
-                    f"finished={state.get('finished')}"
+
+                logger.info(
+                    "loop done | step=%d loop_time=%.2fs",
+                    last_printed_step,
+                    time.time() - loop_start,
                 )
+
+                last_printed_step = step
+                loop_start = time.time()
 
             yield state
