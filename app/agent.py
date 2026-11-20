@@ -51,22 +51,28 @@ class GUIAgent:
         last_printed_step = 0
         loop_start = time.time()
 
-        for event in self.agent.stream(
-            init_state, config=run_config, stream_mode=stream_mode
-        ):
-
-            state = event
-            step = state.get("step")
-
-            if step != last_printed_step:
-
-                logger.info(
-                    "loop done | step=%d loop_time=%.2fs",
-                    last_printed_step,
-                    time.time() - loop_start,
-                )
-
-                last_printed_step = step
-                loop_start = time.time()
-
-            yield state
+        try:
+            for event in self.agent.stream(
+                init_state, config=run_config, stream_mode=stream_mode
+            ):
+    
+                state = event
+                step = state.get("step")
+    
+                if step != last_printed_step:
+    
+                    logger.info(
+                        "loop done | step=%d loop_time=%.2fs",
+                        last_printed_step,
+                        time.time() - loop_start,
+                    )
+    
+                    last_printed_step = step
+                    loop_start = time.time()
+    
+                yield state
+        except Exception:
+            logger.exception("Agent 运行崩溃 | thread_id=%s goal=%r", thread_id, goal)
+            raise
+        finally:
+            logger.info("Agent 运行结束 | thread_id=%s goal=%r", thread_id, goal)

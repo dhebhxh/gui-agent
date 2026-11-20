@@ -4,7 +4,12 @@ import sys
 import os
 
 _CONFIGURED = False
+ALLOWED_PREFIXES = ("agent", "perception", "planner", "executor")
 
+class OnlyMyLogsFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        return record.name.startswith(ALLOWED_PREFIXES)
+    
 def setup_logging(level: str = "INFO", log_file: str = None):
     global _CONFIGURED
     if _CONFIGURED:
@@ -30,4 +35,5 @@ def setup_logging(level: str = "INFO", log_file: str = None):
         fileh = logging.FileHandler(log_file, encoding="utf-8")
         fileh.setLevel(logging.DEBUG)
         fileh.setFormatter(fmt)
+        fileh.addFilter(OnlyMyLogsFilter())
         root.addHandler(fileh)

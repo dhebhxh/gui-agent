@@ -2,13 +2,13 @@ import time
 from state import AgentState
 import requests
 import logging
+from config import AgentConfig
 
 logger = logging.getLogger(__name__)
 
-LOCAL_SERVER_URL = ""
-
-def build_executor_node():
-
+def build_executor_node(cfg: AgentConfig):
+    local_server_url = cfg.local_server_url.rstrip("/")
+    
     def executor_node(state: AgentState) -> dict:
         logger.info("node executer | step=%d", state.get("step"))
         
@@ -27,7 +27,7 @@ def build_executor_node():
         req_start = time.time()
         try:
             payload = {"action": action}
-            resp = requests.post(f"{LOCAL_SERVER_URL}/execute", json=payload, timeout=10)
+            resp = requests.post(f"{local_server_url}/execute", json=payload, timeout=10)
             resp.raise_for_status()
             response_data = resp.json()
             result = response_data.get("result", {})

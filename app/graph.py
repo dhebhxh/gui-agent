@@ -8,9 +8,9 @@ def build_graph(cfg):
 
     g = StateGraph(AgentState)
 
-    g.add_node("perception", build_perception_node())
+    g.add_node("perception", build_perception_node(cfg))
     g.add_node("planner",    build_planner_node(cfg))
-    g.add_node("executor",   build_executor_node())
+    g.add_node("executor",   build_executor_node(cfg))
 
     g.set_entry_point("perception")
 

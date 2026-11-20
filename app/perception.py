@@ -5,14 +5,16 @@ from state import AgentState
 import cv2, numpy as np
 import requests
 import logging
+from config import AgentConfig
 
 logger = logging.getLogger(__name__)
 
 LOCAL_SERVER_URL = ""
 
-def build_perception_node():
+def build_perception_node(cfg: AgentConfig):
     extractor = ScreenElementExtractor()
-
+    local_server_url = cfg.local_server_url.rstrip("/")
+    
     def perception_node(state: AgentState) -> dict:
         logger.info(
             "node=perception step=%d",
@@ -24,7 +26,7 @@ def build_perception_node():
         # request screenshot
         req_start = time.time()
         try:
-            resp = requests.get(f"{LOCAL_SERVER_URL}/screenshot", timeout=10)
+            resp = requests.get(f"{local_server_url}/screenshot", timeout=10)
             resp.raise_for_status()
             data = resp.json()
             logger.info(

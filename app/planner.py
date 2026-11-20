@@ -6,6 +6,7 @@ from prompts import SYSTEM_PROMPT, PLANNER_USER_TEMPLATE
 import base64
 import logging
 import time
+from langchain_core.messages import HumanMessage, AIMessage
 
 logger = logging.getLogger(__name__)
 
@@ -37,23 +38,19 @@ def _dump_llm_input(llm_input) -> str:
             lines.append("")
             continue
 
-        return "\n".join(lines)
+    return "\n".join(lines)
 
 
 def _format_ai_messages(messages, max_n=5) -> str:
     ai_messages = []
     for msg in (messages or []):
-        if msg.get("role") != "assistant":
-            continue
-
-        content = msg.get("content")
-        if content and isinstance(content, str) and content.strip():
-            ai_messages.append(content)
+        if isinstance(msg, AIMessage):
+            ai_messages.append(msg.content)
 
     if not ai_messages:
-        return "This is the first step. Start by examining the current screen."
+        return "1. This is the first step. Start by examining the current screen."
 
-    recent = list(reversed(ai_messages[-max_n:]))
+    recent = list(ai_messages[-max_n:])
     lines = [f"{i}. {text}" for i, text in enumerate(recent, start=1)]
     return "\n".join(lines)
 
@@ -118,10 +115,6 @@ def build_planner_node(cfg: AgentConfig):
         thought = llm_output.thought
         action = llm_output.action.model_dump(exclude_none=True)
 
-        logger.info("STEP %d DECISION", state.get("step"))
-        logger.info("thought: %s", thought)
-        logger.info("action: %s", action)
-
         logger.info(
             "planner done | step=%d action=%s total_time=%.2fs",
             state.get("step"),
@@ -133,8 +126,8 @@ def build_planner_node(cfg: AgentConfig):
             "finished": (llm_output.action.type == ActionType.FINISH),
             "last_action": action,
             "messages": [
-                {"role": "user", "content": user_text},
-                {"role": "assistant", "content": thought or ""}
+                HumanMessage(content=user_text),
+                AIMessage(content=thought or ""),
             ]
         }
     

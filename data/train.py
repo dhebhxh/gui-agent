@@ -16,9 +16,9 @@ from transformers import (
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
 from trl import SFTTrainer, SFTConfig
 
-MODEL_PATH = "/root/autodl-tmp/Qwen2.5-VL-7B-Instruct"
+MODEL_PATH = "/root/autodl-tmp/Qwen2.5-VL-7B-Instruct-clean"
 DATASET_DIR = "/root/autodl-tmp/mind2web_sft"
-OUTPUT_DIR = "/root/autodl-tmp/mind2web_qwen25vl_sft"
+OUTPUT_DIR = "/root/autodl-tmp/mind2web_qwen25vl_sft-clean"
 
 # ============================================================
 # 1. 加载所有分片

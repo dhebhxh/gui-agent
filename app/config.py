@@ -6,11 +6,13 @@ load_dotenv()
 
 @dataclass
 class AgentConfig:
-    model_name: str = os.getenv("VLM_MODEL_ID")
-    base_url: str = "http://127.0.0.1:11434/v1"
-    api_key: str = os.getenv("MODELSCOPE_API_KEY", "")
+    model_name: str = "Qwen2.5-VL-7B-Instruct"
+    base_url: str = "http://127.0.0.1:8000/v1"
+    api_key: str = "EMPTY"
     temperature: float = 0.1
     max_tokens: int = 2048
 
     max_steps: int = 10
     max_elements_in_prompt: int = 60
+
+    local_server_url: str = "http://127.0.0.1:8001/"
