@@ -23,6 +23,8 @@ sys.path.insert(
 )
 
 from src.prompts import PLANNER_USER_TEMPLATE, SYSTEM_PROMPT
+from qwen_vl_utils.vision_process import smart_resize
+
 
 
 # ============================================================
@@ -36,6 +38,10 @@ PARQUET_DIR = "/root/autodl-tmp/mind2web_raw/data"
 OUT_DIR = "/root/autodl-tmp/mind2web_sft"
 
 BATCH_SIZE = 32
+
+FACTOR = 28
+MIN_PIXELS = 256 * 28 * 28
+MAX_PIXELS = 1280 * 28 * 28
 
 NEEDED_COLS = [
     "screenshot",
@@ -61,13 +67,9 @@ MESSAGE_FEATURE = {
 
 DATASET_FEATURES = Features({
     "prompt": List(MESSAGE_FEATURE),
-
     "completion": List(MESSAGE_FEATURE),
-
     "images": List(HFImage()),
-
     "goal_id": Value("string"),
-
     "source": Value("string"),
 })
 
@@ -81,18 +83,14 @@ def parse_json(value):
 
     if isinstance(value, dict):
         return value
-
     if isinstance(value, str):
         return json.loads(value)
-
     raise ValueError("Unsupported JSON value")
 
 
 def get_screenshot(row):
     """读取 Parquet 中的截图并转换为 RGB PIL Image。"""
-
     screenshot = row.get("screenshot")
-
     if not screenshot:
         return None
 
@@ -108,9 +106,7 @@ def get_screenshot(row):
         with Image.open(BytesIO(img_bytes)) as img:
             img.load()
             image = img.convert("RGB")
-
         return image
-
     except Exception:
         return None
 
@@ -118,29 +114,21 @@ def get_screenshot(row):
 def parse_action(row):
     """
     将 Mind2Web operation 转换为模型动作。
-
     支持:
         CLICK -> left_click
         TYPE  -> type_text
-
     SELECT 暂时跳过。
     """
 
     try:
         operation = parse_json(row["operation"])
-
         op = operation.get("op", "").upper()
         value = operation.get("value", "")
-
     except Exception:
         return None
 
     if op == "CLICK":
-
-        action = {
-            "type": "left_click"
-        }
-
+        action = {"type": "left_click"}
     elif op == "TYPE":
 
         if value is None:
@@ -150,14 +138,13 @@ def parse_action(row):
             "type": "type_text",
             "text": str(value)
         }
-
     else:
         return None
 
     return action
 
 
-def get_target_coordinates(row, image):
+def parse_original_target_center(row, image):
     """
     优先使用 original_target。
     如果没有，则使用 top_level_target。
@@ -174,11 +161,8 @@ def get_target_coordinates(row, image):
 
     try:
         for item in candidates:
-
             candidate = parse_json(item)
-
             parsed_candidates.append(candidate)
-
     except Exception:
         return None
 
@@ -186,16 +170,13 @@ def get_target_coordinates(row, image):
 
     # 优先寻找原始目标
     for candidate in parsed_candidates:
-
         if candidate.get("is_original_target"):
             target = candidate
             break
 
     # 其次寻找顶层目标
     if target is None:
-
         for candidate in parsed_candidates:
-
             if candidate.get("is_top_level_target"):
                 target = candidate
                 break
@@ -205,9 +186,7 @@ def get_target_coordinates(row, image):
 
     try:
         attrs = parse_json(target["attributes"])
-
         rect = attrs["bounding_box_rect"]
-
         x_str, y_str, w_str, h_str = rect.split(",")
 
         x = float(x_str) + float(w_str) / 2
@@ -219,12 +198,41 @@ def get_target_coordinates(row, image):
             and 0 <= y < image.height
         ):
             return None
-
-        return int(x), int(y)
+            
+        return x, y
 
     except Exception:
         return None
 
+# ============================================================
+# 5. 图片缩放 + 坐标同步变换
+# ============================================================
+
+def resize_image_and_coords(image, x, y):
+    orig_h, orig_w = image.height, image.width
+
+    new_h, new_w = smart_resize(
+        orig_h, orig_w,
+        factor=FACTOR,
+        min_pixels=MIN_PIXELS,
+        max_pixels=MAX_PIXELS,
+    )
+
+    scale_x = new_w / orig_w
+    scale_y = new_h / orig_h
+
+    x_scaled = int(round(x * scale_x))
+    y_scaled = int(round(y * scale_y))
+
+    if not (0 <= x_scaled < new_w and 0 <= y_scaled < new_h):
+        return None
+
+    if (new_w, new_h) != (orig_w, orig_h):
+        scaled_image = image.resize((new_w, new_h), Image.BICUBIC)
+    else:
+        scaled_image = image
+
+    return scaled_image, x_scaled, y_scaled
 
 # ============================================================
 # 4. 构造训练样本
@@ -254,27 +262,30 @@ def build_sample(row):
     # 4.3 坐标
     # --------------------------
 
-    coordinates = get_target_coordinates(row, image)
+    center = parse_original_target_center(row, image)
 
-    if coordinates is None:
+    if center is None:
         return None
+    x, y = center
 
-    action["x"], action["y"] = coordinates
-
+    resized = resize_image_and_coords(image, x, y)
+    if resized is None:
+        return None
+    scaled_image, x_scaled, y_scaled = resized
+    action["x"], action["y"] = x_scaled, y_scaled
+    
     # --------------------------
     # 4.4 User Prompt
     # --------------------------
 
     goal = row.get("confirmed_task")
-
     if not goal:
         return None
 
     user_text = PLANNER_USER_TEMPLATE.format(
         goal=str(goal),
         thought_history=(
-            "This is the first step. "
-            "Start by examining the current screen."
+            "1. This is the first step. Start by examining the current screen."
         ),
     )
 
@@ -344,7 +355,7 @@ def build_sample(row):
         "completion": completion,
 
         # 图片与 prompt 中的 image placeholder 对应
-        "images": [image],
+        "images": [scaled_image],
 
         "goal_id": str(row["annotation_id"]),
         "source": "multimodal-mind2web",

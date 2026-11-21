@@ -42,7 +42,7 @@ print(train_dataset.features)
 processor = AutoProcessor.from_pretrained(
     MODEL_PATH,
     min_pixels=256 * 28 * 28,
-    max_pixels=1280 * 28 * 28
+    max_pixels=1280 * 28 * 28,
 )
 
 bnb_config = BitsAndBytesConfig(

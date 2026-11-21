@@ -6,7 +6,7 @@ load_dotenv()
 
 @dataclass
 class AgentConfig:
-    model_name: str = "Qwen2.5-VL-7B-Instruct"
+    model_name: str = "mind2web"
     base_url: str = "http://127.0.0.1:8000/v1"
     api_key: str = "EMPTY"
     temperature: float = 0.1
