@@ -72,6 +72,9 @@ def build_perception_node(cfg: AgentConfig):
 
         start = time.time()
 
+        old_resized_screenshot = state.get("resized_screenshot")
+        old_elements = state.get("elements", [])
+
         # request screenshot
         req_start = time.time()
         try:
@@ -140,6 +143,9 @@ def build_perception_node(cfg: AgentConfig):
         )
 
         return {
+            "old_resized_screenshot": old_resized_screenshot,
+            "old_elements": old_elements,
+            
             "orig_screenshot": orig_png,
             "resized_screenshot": resized_png,
             "resize_info": resize_info,

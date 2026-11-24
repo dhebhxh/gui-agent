@@ -6,23 +6,75 @@ from config import AgentConfig
 
 logger = logging.getLogger(__name__)
 
+def _convert_action_coordinates(action: dict, resize_info: dict) -> dict:
+    action = dict(action)
+    coordinate_keys = (
+        "x", "y",
+        "start_x", "start_y",
+        "end_x", "end_y",
+    )
+
+    if not any(key in action for key in coordinate_keys):
+        return action
+    if not resize_info:
+        raise ValueError("Missing resize_info for coordinate conversion.")
+
+    scale_x = resize_info.get("scale_x")
+    scale_y = resize_info.get("scale_y")
+
+    if not scale_x or not scale_y or scale_x <= 0 or scale_y <= 0:
+        raise ValueError(f"Invalid resize_info: {resize_info}")
+
+    for key in coordinate_keys:
+        if key not in action:
+            continue
+        scale = scale_x if key.endswith("x") else scale_y
+        action[key] = int(round(action[key] / scale))
+
+    return action
+
 def build_executor_node(cfg: AgentConfig):
     local_server_url = cfg.local_server_url.rstrip("/")
     
     def executor_node(state: AgentState) -> dict:
         logger.info("node executer | step=%d", state.get("step"))
         
-        action = dict(state.get("last_action"))
-        action_type = action["type"]
+        original_action = dict(state.get("last_action") or {})
+        action_type = original_action["type"]
 
         # task finish
         if action_type == "finish":
             logger.info("executor | task finished")
             return {
                 "finished": True,
-                "last_result": {"type": "ok", "data": "finished"}
+                "last_execution_result": {
+                    "type": "ok",
+                    "data": "finished"
+                }
             }
 
+        try:
+            resize_info = state.get("resize_info")
+            action = _convert_action_coordinates(
+                original_action,
+                resize_info
+            )
+
+            logger.debug(
+                "coordinate conversion | origina%s executed=%s",
+                original_action,
+                action
+            )
+
+        except Exception as e:
+            logger.exception("coordinate conversion failed")
+            return {
+                "last_execution_result": {
+                    "type": "error",
+                    "data": str(e)
+                }
+            }
+        
         # other action
         req_start = time.time()
         try:
@@ -46,7 +98,10 @@ def build_executor_node(cfg: AgentConfig):
                 e,
             )
             return {
-                "last_result": {"type": "error", "data": str(e)}
+                "last_execution_result": {
+                    "type": "error",
+                    "data": str(e)
+                }
             }
         except Exception as e:
             logger.exception(
@@ -54,7 +109,10 @@ def build_executor_node(cfg: AgentConfig):
                 action_type, time.time() - req_start,
             )
             return {
-                "last_result": {"type": "error", "data": str(e)},
+                "last_execution_result": {
+                    "type": "error",
+                    "data": str(e)
+                },
             }
 
         time.sleep(2) # wait for the screen to update after the action is performed
@@ -67,15 +125,16 @@ def build_executor_node(cfg: AgentConfig):
 
         history_entry = {
             "step": state.get("step", 0),
-            "action": {k: v for k, v in action.items()},
-            "result": safe_result
+            "action": original_action,
+            "executed_action": action,
+            "execution_result": safe_result
         }
 
         logger.debug("executor done")
         
         return {
             "step": state.get("step") + 1,
-            "last_result": safe_result,
+            "last_execution_result": safe_result,
             "history": list(state.get("history") or []) + [history_entry]
         }
 

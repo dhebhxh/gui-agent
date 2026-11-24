@@ -68,48 +68,30 @@ class BaseAction(BaseModel):
 
 class LeftSingleClickAction(BaseAction):
     type: Literal[ActionType.LEFT_SINGLE_CLICK] = ActionType.LEFT_SINGLE_CLICK
-    x: Optional[int] = Field(default=None, description="X coordinate to click. Omit to click at current position.")
-    y: Optional[int] = Field(default=None, description="Y coordinate to click. Omit to click at current position.")
+    x: int = Field(description="X coordinate to click.")
+    y: int = Field(description="Y coordinate to click.")
     modifiers: Optional[List[str]] = Field(
         default=None,
         description="Modifier keys held during the click, e.g. ['ctrl', 'shift'].",
     )
-
-    @model_validator(mode="after")
-    def x_and_y_must_pair(self):
-        if (self.x is None) != (self.y is None):
-            raise ValueError(f"{self.type.value}: x and y must be provided together or omitted together.")
-        return self
 
 class RightSingleClickAction(BaseAction):
     type: Literal[ActionType.RIGHT_SINGLE_CLICK] = ActionType.RIGHT_SINGLE_CLICK
-    x: Optional[int] = Field(default=None, description="X coordinate to click. Omit to click at current position.")
-    y: Optional[int] = Field(default=None, description="Y coordinate to click. Omit to click at current position.")
+    x: int = Field(description="X coordinate to click.")
+    y: int = Field(description="Y coordinate to click.")
     modifiers: Optional[List[str]] = Field(
         default=None,
         description="Modifier keys held during the click, e.g. ['ctrl', 'shift'].",
     )
-
-    @model_validator(mode="after")
-    def x_and_y_must_pair(self):
-        if (self.x is None) != (self.y is None):
-            raise ValueError(f"{self.type.value}: x and y must be provided together or omitted together.")
-        return self
     
 class LeftDoubleClickAction(BaseAction):
     type: Literal[ActionType.LEFT_DOUBLE_CLICK] = ActionType.LEFT_DOUBLE_CLICK
-    x: Optional[int] = Field(default=None, description="X coordinate to double click. Omit to click at current position.")
-    y: Optional[int] = Field(default=None, description="Y coordinate to double click. Omit to click at current position.")
+    x: int = Field(description="X coordinate to double click.")
+    y: int = Field(description="Y coordinate to double click.")
     modifiers: Optional[List[str]] = Field(
         default=None,
         description="Modifier keys held during the double click, e.g. ['ctrl', 'shift'].",
     )
-
-    @model_validator(mode="after")
-    def x_and_y_must_pair(self):
-        if (self.x is None) != (self.y is None):
-            raise ValueError(f"{self.type.value}: x and y must be provided together or omitted together.")
-        return self
 
 # # 未加入最终可选择动作列表
 # class MouseButtonAction(BaseAction):
@@ -121,21 +103,14 @@ class LeftDoubleClickAction(BaseAction):
 
 class LeftClickDragAction(BaseAction):
     type: Literal[ActionType.LEFT_CLICK_DRAG] = ActionType.LEFT_CLICK_DRAG
-    start_x: int = Field(description="Drag start X. Omit to start at current cursor position.")
-    start_y: int = Field(description="Drag start Y. Omit to start at current cursor position.")
-    end_x: int = Field(description="Drag end X.")
-    end_y: int = Field(description="Drag end Y.")
+    start_x: int = Field(description="Drag start X coordinate.")
+    start_y: int = Field(description="Drag start Y coordinate.")
+    end_x: int = Field(description="Drag end X coordinate.")
+    end_y: int = Field(description="Drag end Y coordinate.")
     modifiers: Optional[List[str]] = Field(
         default=None,
         description="Modifier keys held during the drag.",
     )
-
-    @model_validator(mode="after")
-    def start_must_pair(self):
-        if (self.start_x is None) != (self.start_y is None):
-            raise ValueError("start_x and start_y must be provided together or omitted together.")
-        return self
-
 
 class TypeTextAction(BaseAction):
     type: Literal[ActionType.TYPE_TEXT] = ActionType.TYPE_TEXT
@@ -176,13 +151,11 @@ class ScrollAction(BaseAction):
         description="Scroll direction."
     )
     amount: Optional[int] = Field(default=1, description="Scroll amount in wheel steps.")
-    x: Optional[int] = Field(default=None, description="Optional X coordinate to scroll at.")
-    y: Optional[int] = Field(default=None, description="Optional Y coordinate to scroll at.")
-
+    x: int = Field(description="X coordinate of the scroll position.")
+    y: int = Field(description="Y coordinate of the scroll position.")
 
 class FinishAction(BaseAction):
     type: Literal[ActionType.FINISH] = ActionType.FINISH
-
 
 # ---------------------------------------------------------
 # 4. Discriminated union + top-level output schema
@@ -200,16 +173,26 @@ Action = Annotated[
     Field(discriminator="type"),
 ]
 
-
 class AgentOutputSchema(BaseModel):
     thought: str = Field(
         description=(
-            "Your thought should cover these points:\n"
-            "1. What the previous step tried to do.\n"
-            "2. What the current screen shows now.\n"
-            "3. Did the previous step achieve its expected result?\n"
-            "4. Is the final goal already achieved on the current screen?\n"
-            "5. Otherwise, what action will you take next, and what result do you expect from it?\n"
+            "Analyze the current situation and explain your decision:\n"
+            "1. What the previous action attempted to do.\n"
+            "2. What the verification result indicates.\n"
+            "3. What the current screen shows.\n"
+            "4. Whether the previous action achieved its expected result.\n"
+            "5. Whether the user's final goal has been achieved.\n"
+            "6. Why the next action is appropriate, if another action is needed.\n"
+        ),
+    )
+
+    expected_result: str = Field(
+        description=(
+            "Describe the concrete and observable screen change expected "
+            "after executing the selected action. This result will be used "
+            "by the Verifier and Planner in the next iteration to evaluate "
+            "whether the action achieved its intended effect. "
+            "For the finish action, return an empty string."
         ),
     )
 

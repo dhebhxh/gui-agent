@@ -26,13 +26,21 @@ class GUIAgent:
     ) -> Generator[dict, None, None]:
         init_state = {
             "goal": goal,
-            "raw_screenshot": None,
-            "annotated_screenshot": None,
+
+            "old_resized_screenshot": None,
+            "old_elements": [],
+
+            "orig_screenshot": None,
+            "resized_screenshot": None,
+            "resize_info": None,
             "elements": [],
+
             "messages": [],
             "history": [],
+
             "last_action": None,
             "last_result": None,
+
             "step": 0,
             "finished": False,
         }
