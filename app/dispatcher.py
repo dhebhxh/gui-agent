@@ -146,16 +146,16 @@ class ActionDispatcher:
         self._release_modifiers(pressed)
         return {"type": "ok"}
 
-    def _do_left_click(self, action):
+    def _do_left_single_click(self, action):
         return self._do_click(action, "left")
 
-    def _do_right_click(self, action):
+    def _do_right_single_click(self, action):
         return self._do_click(action, "right")
 
     def _do_middle_click(self, action):
         return self._do_click(action, "middle")
 
-    def _do_double_click(self, action):
+    def _do_left_double_click(self, action):
         return self._do_click(action, "left", double=True)
 
     # ---------------------------------------------------------

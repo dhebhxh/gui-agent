@@ -1,12 +1,24 @@
 import cv2
 import numpy as np
 import easyocr
+from pathlib import Path
 
 class ScreenElementExtractor:
     def __init__(self, ocr_langs=('ch_sim', 'en'), iou_threshold=0.3, use_gpu=False):
-        self.ocr = easyocr.Reader(list(ocr_langs), gpu=use_gpu)
+        base_dir = Path(__file__).resolve().parent
+        model_dir = base_dir / "models" / "easyocr"
+        model_dir.mkdir(parents=True, exist_ok=True)
+
+        self.ocr = easyocr.Reader(
+            list(ocr_langs),
+            gpu=use_gpu,
+            model_storage_directory=str(model_dir),
+            download_enabled=True
+        )
+
         self.iou_threshold = iou_threshold
         self._next_id = 1
+
 
     @staticmethod
     def _poly_to_bbox(poly):
@@ -146,8 +158,11 @@ class ScreenElementExtractor:
         self._next_id = 1  # 每次处理新图重置 ID，保证每张图都从 #1 开始
         
         h, w = image.shape[:2]
+
         ocr_elems = self._run_ocr(image)
+
         visual_elems = self._run_visual_detect(image)
+
         elements = self._merge(ocr_elems, visual_elems)
 
         for elem in elements:

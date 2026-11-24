@@ -7,27 +7,27 @@ from enum import Enum
 # 1. Action type enum (covers all Dispatcher operations)
 # ---------------------------------------------------------
 class ActionType(str, Enum):
-    SCREENSHOT = "screenshot"
-    CURSOR_POSITION = "cursor_position"
-    MOUSE_MOVE = "mouse_move"
+    # SCREENSHOT = "screenshot"
+    # CURSOR_POSITION = "cursor_position"
+    # MOUSE_MOVE = "mouse_move"
 
-    LEFT_CLICK = "left_click"
-    RIGHT_CLICK = "right_click"
-    MIDDLE_CLICK = "middle_click"
-    DOUBLE_CLICK = "double_click"
+    LEFT_SINGLE_CLICK = "left_single_click"
+    RIGHT_SINGLE_CLICK = "right_single_click"
+    # MIDDLE_CLICK = "middle_click"
+    LEFT_DOUBLE_CLICK = "left_double_click"
 
     LEFT_CLICK_DRAG = "left_click_drag"
 
-    LEFT_MOUSE_DOWN = "left_mouse_down"
-    LEFT_MOUSE_UP = "left_mouse_up"
-    RIGHT_MOUSE_DOWN = "right_mouse_down"
-    RIGHT_MOUSE_UP = "right_mouse_up"
-    MIDDLE_MOUSE_DOWN = "middle_mouse_down"
-    MIDDLE_MOUSE_UP = "middle_mouse_up"
+    # LEFT_MOUSE_DOWN = "left_mouse_down"
+    # LEFT_MOUSE_UP = "left_mouse_up"
+    # RIGHT_MOUSE_DOWN = "right_mouse_down"
+    # RIGHT_MOUSE_UP = "right_mouse_up"
+    # MIDDLE_MOUSE_DOWN = "middle_mouse_down"
+    # MIDDLE_MOUSE_UP = "middle_mouse_up"
 
-    KEY_PRESS = "key_press"
-    KEY_DOWN = "key_down"
-    KEY_UP = "key_up"
+    # KEY_PRESS = "key_press"
+    # KEY_DOWN = "key_down"
+    # KEY_UP = "key_up"
 
     TYPE_TEXT = "type_text"
     SCROLL = "scroll"
@@ -51,31 +51,23 @@ class BaseAction(BaseModel):
 # ---------------------------------------------------------
 # 3. Action models
 # ---------------------------------------------------------
-# 未加入最终可选择动作列表
-class ScreenshotAction(BaseAction):
-    type: Literal[ActionType.SCREENSHOT] = ActionType.SCREENSHOT
+# # 未加入最终可选择动作列表
+# class ScreenshotAction(BaseAction):
+#     type: Literal[ActionType.SCREENSHOT] = ActionType.SCREENSHOT
 
-# 未加入最终可选择动作列表
-class CursorPositionAction(BaseAction):
-    type: Literal[ActionType.CURSOR_POSITION] = ActionType.CURSOR_POSITION
+# # 未加入最终可选择动作列表
+# class CursorPositionAction(BaseAction):
+#     type: Literal[ActionType.CURSOR_POSITION] = ActionType.CURSOR_POSITION
 
-# 未加入最终可选择动作列表
-class MouseMoveAction(BaseAction):
-    type: Literal[ActionType.MOUSE_MOVE] = ActionType.MOUSE_MOVE
-    x: int = Field(description="Target X coordinate of the cursor.")
-    y: int = Field(description="Target Y coordinate of the cursor.")
+# # 未加入最终可选择动作列表
+# class MouseMoveAction(BaseAction):
+#     type: Literal[ActionType.MOUSE_MOVE] = ActionType.MOUSE_MOVE
+#     x: int = Field(description="Target X coordinate of the cursor.")
+#     y: int = Field(description="Target Y coordinate of the cursor.")
 
 
-class SingleClickAction(BaseAction):
-    type: Literal[
-        ActionType.LEFT_CLICK,
-        ActionType.RIGHT_CLICK,
-    ] = Field(
-        description=(
-            "left_click: Single left click."
-            "right_click: Single right click, used to open context menus."
-        )
-    )
+class LeftSingleClickAction(BaseAction):
+    type: Literal[ActionType.LEFT_SINGLE_CLICK] = ActionType.LEFT_SINGLE_CLICK
     x: Optional[int] = Field(default=None, description="X coordinate to click. Omit to click at current position.")
     y: Optional[int] = Field(default=None, description="Y coordinate to click. Omit to click at current position.")
     modifiers: Optional[List[str]] = Field(
@@ -89,8 +81,23 @@ class SingleClickAction(BaseAction):
             raise ValueError(f"{self.type.value}: x and y must be provided together or omitted together.")
         return self
 
-class DoubleClickAction(BaseAction):
-    type: Literal[ActionType.DOUBLE_CLICK] = ActionType.DOUBLE_CLICK
+class RightSingleClickAction(BaseAction):
+    type: Literal[ActionType.RIGHT_SINGLE_CLICK] = ActionType.RIGHT_SINGLE_CLICK
+    x: Optional[int] = Field(default=None, description="X coordinate to click. Omit to click at current position.")
+    y: Optional[int] = Field(default=None, description="Y coordinate to click. Omit to click at current position.")
+    modifiers: Optional[List[str]] = Field(
+        default=None,
+        description="Modifier keys held during the click, e.g. ['ctrl', 'shift'].",
+    )
+
+    @model_validator(mode="after")
+    def x_and_y_must_pair(self):
+        if (self.x is None) != (self.y is None):
+            raise ValueError(f"{self.type.value}: x and y must be provided together or omitted together.")
+        return self
+    
+class LeftDoubleClickAction(BaseAction):
+    type: Literal[ActionType.LEFT_DOUBLE_CLICK] = ActionType.LEFT_DOUBLE_CLICK
     x: Optional[int] = Field(default=None, description="X coordinate to double click. Omit to click at current position.")
     y: Optional[int] = Field(default=None, description="Y coordinate to double click. Omit to click at current position.")
     modifiers: Optional[List[str]] = Field(
@@ -104,15 +111,15 @@ class DoubleClickAction(BaseAction):
             raise ValueError(f"{self.type.value}: x and y must be provided together or omitted together.")
         return self
 
-# 未加入最终可选择动作列表
-class MouseButtonAction(BaseAction):
-    type: Literal[
-        ActionType.LEFT_MOUSE_DOWN, ActionType.LEFT_MOUSE_UP,
-        ActionType.RIGHT_MOUSE_DOWN, ActionType.RIGHT_MOUSE_UP,
-        ActionType.MIDDLE_MOUSE_DOWN, ActionType.MIDDLE_MOUSE_UP,
-    ]
+# # 未加入最终可选择动作列表
+# class MouseButtonAction(BaseAction):
+#     type: Literal[
+#         ActionType.LEFT_MOUSE_DOWN, ActionType.LEFT_MOUSE_UP,
+#         ActionType.RIGHT_MOUSE_DOWN, ActionType.RIGHT_MOUSE_UP,
+#         ActionType.MIDDLE_MOUSE_DOWN, ActionType.MIDDLE_MOUSE_UP,
+#     ]
 
-class DragAction(BaseAction):
+class LeftClickDragAction(BaseAction):
     type: Literal[ActionType.LEFT_CLICK_DRAG] = ActionType.LEFT_CLICK_DRAG
     start_x: int = Field(description="Drag start X. Omit to start at current cursor position.")
     start_y: int = Field(description="Drag start Y. Omit to start at current cursor position.")
@@ -143,24 +150,24 @@ class TypeTextAction(BaseAction):
             raise ValueError("text must not be empty.")
         return v
 
-# 未加入最终可选择动作列表
-class KeyAction(BaseAction):
-    type: Literal[
-        ActionType.KEY_PRESS,
-        ActionType.KEY_DOWN,
-        ActionType.KEY_UP,
-    ]
-    key: Union[str, List[str]] = Field(
-        description="A single key or a list of keys for a combination, e.g. 'enter' or ['ctrl', 'c']."
-    )
+# # 未加入最终可选择动作列表
+# class KeyAction(BaseAction):
+#     type: Literal[
+#         ActionType.KEY_PRESS,
+#         ActionType.KEY_DOWN,
+#         ActionType.KEY_UP,
+#     ]
+#     key: Union[str, List[str]] = Field(
+#         description="A single key or a list of keys for a combination, e.g. 'enter' or ['ctrl', 'c']."
+#     )
 
-    @model_validator(mode="after")
-    def key_not_empty(self):
-        if not self.key:
-            raise ValueError(f"{self.type.value}: key must not be empty.")
-        if isinstance(self.key, list) and len(self.key) == 0:
-            raise ValueError("key list must not be empty.")
-        return self
+#     @model_validator(mode="after")
+#     def key_not_empty(self):
+#         if not self.key:
+#             raise ValueError(f"{self.type.value}: key must not be empty.")
+#         if isinstance(self.key, list) and len(self.key) == 0:
+#             raise ValueError("key list must not be empty.")
+#         return self
 
 
 class ScrollAction(BaseAction):
@@ -182,11 +189,11 @@ class FinishAction(BaseAction):
 # ---------------------------------------------------------
 Action = Annotated[
     Union[
-        SingleClickAction,
-        DoubleClickAction,
-        DragAction,
+        LeftSingleClickAction,
+        RightSingleClickAction,
+        LeftDoubleClickAction,
+        LeftClickDragAction,
         TypeTextAction,
-        KeyAction,
         ScrollAction,
         FinishAction,
     ],
@@ -202,10 +209,10 @@ class AgentOutputSchema(BaseModel):
             "2. What the current screen shows now.\n"
             "3. Did the previous step achieve its expected result?\n"
             "4. Is the final goal already achieved on the current screen?\n"
-            "5. Otherwise, what single action will you take next, and what result do you expect from it?\n"
+            "5. Otherwise, what action will you take next, and what result do you expect from it?\n"
         ),
     )
 
     action: Action = Field(
-        description="The single action the agent decides to perform next."
+        description="The action the agent decides to perform next."
     )

@@ -2,11 +2,12 @@ from typing import TypedDict, Annotated, List
 from langgraph.graph.message import add_messages
 
 class AgentState(TypedDict):
-
     goal: str
 
-    raw_screenshot: bytes
-    annotated_screenshot: bytes
+    orig_screenshot: bytes
+    resized_screenshot: bytes
+    resize_info: dict
+    elements: List
 
     messages: Annotated[list, add_messages]
     history: List[dict]

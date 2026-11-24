@@ -16,3 +16,8 @@ class AgentConfig:
     max_elements_in_prompt: int = 60
 
     local_server_url: str = "http://127.0.0.1:8001/"
+
+    # image resize config
+    factor: int = 28
+    min_pixels: int = 256 * 28 * 28
+    max_pixels: int = 1280 * 28 * 28
