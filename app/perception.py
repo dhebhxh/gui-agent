@@ -1,6 +1,6 @@
 import base64
 import time, os
-from screen_parser_detector import ScreenParserDetector   # 你已有的
+from screen_parser_detector import ScreenParserDetector
 from state import AgentState
 import cv2, numpy as np
 import requests
@@ -52,7 +52,6 @@ def resize_screenshot(orig_png: bytes, factor: int, min_pixels: int, max_pixels:
 
 def build_perception_node(cfg: AgentConfig):
     detector = ScreenParserDetector(
-        model_path="models/screenparser/best.pt",
         device=0,
         conf=0.10,
         iou=0.10,
