@@ -132,14 +132,13 @@ def build_planner_node(cfg: AgentConfig):
         user_text = PLANNER_USER_TEMPLATE.format(
             goal=state["goal"],
             last_action=last_action,
-            execution_result=execution_result,
             verification_result=verification_result,
             expected_result=expected_result,
             thought_history=thought_history
         )
 
         # 3. Prepare screenshot
-        user_image = state.get("raw_screenshot")
+        user_image = state.get("resized_screenshot")
 
         if isinstance(user_image, bytes):
             b64_str = base64.b64encode(user_image).decode("utf-8")

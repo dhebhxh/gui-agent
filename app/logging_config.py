@@ -4,7 +4,7 @@ import sys
 import os
 
 _CONFIGURED = False
-ALLOWED_PREFIXES = ("agent", "perception", "planner", "executor")
+ALLOWED_PREFIXES = ("agent", "perception", "planner", "executor", "verifier")
 
 class OnlyMyLogsFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
