@@ -21,3 +21,4 @@ class AgentConfig:
     factor: int = 28
     min_pixels: int = 256 * 28 * 28
     max_pixels: int = 1280 * 28 * 28
+    resampling_algorithm: str = "None"

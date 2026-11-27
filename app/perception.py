@@ -13,9 +13,30 @@ from qwen_vl_utils.vision_process import smart_resize
 
 logger = logging.getLogger(__name__)
 
-def resize_screenshot(orig_png: bytes, factor: int, min_pixels: int, max_pixels: int):
+_RESAMPLING_MAP = {
+    "nearest": Image.Resampling.NEAREST,
+    "box": Image.Resampling.BOX,
+    "bilinear": Image.Resampling.BILINEAR,
+    "hamming": Image.Resampling.HAMMING,
+    "bicubic": Image.Resampling.BICUBIC,
+    "lanczos": Image.Resampling.LANCZOS,
+}
+
+def resize_screenshot(orig_png: bytes, factor: int, min_pixels: int, max_pixels: int, resampling_algorithm: str):
     image = Image.open(BytesIO(orig_png)).convert("RGB")
     orig_w, orig_h = image.size
+    resampling = _RESAMPLING_MAP.get(resampling_algorithm.lower())
+
+    if resampling is None:
+        resize_info = {
+            "original_width": orig_w,
+            "original_height": orig_h,
+            "resized_width": orig_w,
+            "resized_height": orig_h,
+            "scale_x": 1.0,
+            "scale_y": 1.0,
+        }
+        return orig_png, resize_info
 
     new_h, new_w = smart_resize(
         orig_h,
@@ -31,7 +52,7 @@ def resize_screenshot(orig_png: bytes, factor: int, min_pixels: int, max_pixels:
     if (new_w, new_h) != (orig_w, orig_h):
         resized_image = image.resize(
             (new_w, new_h),
-            Image.Resampling.BICUBIC
+            resampling
         )
     else:
         resized_image = image
@@ -62,6 +83,7 @@ def build_perception_node(cfg: AgentConfig):
     factor = cfg.factor
     min_pixels = cfg.min_pixels
     max_pixels = cfg.max_pixels
+    resampling_algorithm = cfg.resampling_algorithm
 
     def perception_node(state: AgentState) -> dict:
         logger.info(
@@ -111,7 +133,7 @@ def build_perception_node(cfg: AgentConfig):
         logger.debug("original screenshot saved | path=%s", orig_path)
 
         # 将原始截图进行缩放调整，并且存储缩放后的图片
-        resized_png, resize_info = resize_screenshot(orig_png, factor, min_pixels, max_pixels)
+        resized_png, resize_info = resize_screenshot(orig_png, factor, min_pixels, max_pixels, resampling_algorithm)
         resized_path = os.path.join(
             "screenshot",
             f"resized_{ts}_{ms:03d}.png"
